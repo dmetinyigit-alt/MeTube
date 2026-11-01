@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ProTube - Geleceğin Video Platformu</title>
+    <style>
+        :root {
+            --bg-color: #0f0f12;
+            --surface-color: #18181c;
+            --border-color: #27272a;
+            --text-main: #f4f4f5;
+            --text-muted: #a1a1aa;
+            --accent-color: #3b82f6;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 32px;
+            background-color: var(--surface-color);
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            font-size: 22px;
+            font-weight: bold;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+        .search-container {
+            flex-grow: 1;
+            max-width: 500px;
+            margin: 0 20px;
+        }
+        .search-bar {
+            width: 100%;
+            padding: 10px 16px;
+            background-color: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            color: var(--text-main);
+            font-size: 14px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .search-bar:focus {
+            border-color: var(--accent-color);
+        }
+        .profile-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-weight: 600;
+            background: #232329;
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .verified-badge {
+            color: #60a5fa;
+            font-size: 16px;
+        }
+        main {
+            padding: 32px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        .upload-section {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            display: flex;
+            gap: 12px;
+        }
+        .upload-section input {
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            color: var(--text-main);
+            padding: 10px 14px;
+            border-radius: 8px;
+            flex-grow: 1;
+        }
+        .upload-section button {
+            background: var(--accent-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .video-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }
+        .video-card {
+            background-color: var(--surface-color);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+        .video-card iframe {
+            width: 100%;
+            height: 180px;
+            border: none;
+        }
+        .video-info {
+            padding: 16px;
+        }
+        .video-title {
+            font-weight: 600;
+            font-size: 16px;
+            margin-bottom: 8px;
+        }
+        .video-author {
+            color: var(--text-muted);
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">ProTube</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-bar" placeholder="Video veya başlık ara... (Arama Çubuğu Burada!)" onkeyup="filterVideos()">
+        </div>
+        <div class="profile-container">
+            <span>Metin Yiğit</span>
+            <span class="verified-badge" title="Onaylı Profil">✔</span>
+        </div>
+    </header>
+
+    <main>
+        <div class="upload-section">
+            <input type="text" id="vTitle" placeholder="Video Başlığı">
+            <input type="text" id="vUrl" placeholder="YouTube Embed Linki (Örn: https://www.youtube.com/embed/XXXX)">
+            <button onclick="addVideo()">Video Ekle</button>
+        </div>
+
+        <div class="video-grid" id="videoGrid"></div>
+    </main>
+
+    <script>
+        let allVideos = [];
+
+        async function loadVideos() {
+            const res = await fetch('/api/videos');
+            allVideos = await res.json();
+            renderVideos(allVideos);
+        }
+
+        function renderVideos(videosToRender) {
+            const grid = document.getElementById('videoGrid');
+            grid.innerHTML = '';
+            videosToRender.forEach(v => {
+                grid.innerHTML += `
+                    <div class="video-card">
+                        <iframe src="${v.url}" allowfullscreen></iframe>
+                        <div class="video-info">
+                            <div class="video-title">${v.title}</div>
+                            <div class="video-author">
+                                ${v.author} ${v.verified ? '<span class="verified-badge">✔</span>' : ''}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function filterVideos() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = allVideos.filter(v => v.title.toLowerCase().includes(query));
+            renderVideos(filtered);
+        }
+
+        async function addVideo() {
+            const title = document.getElementById('vTitle').value;
+            const url = document.getElementById('vUrl').value;
+            if(!title || !url) return alert("Lütfen tüm alanları doldur!");
+
+            await fetch('/api/videos', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title, url})
+            });
+
+            document.getElementById('vTitle').value = '';
+            document.getElementById('vUrl').value = '';
+            loadVideos();
+        }
+
+        loadVideos();
+    </script>
+</body>
+</html>
